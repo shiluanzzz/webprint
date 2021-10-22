@@ -8,6 +8,9 @@ from werkzeug.utils import secure_filename
 
 def PrintFile(file_path):
     allPrinter=[printer[2] for printer in win32print.EnumPrinters(2)]
+    # 此命令可以看到你的所有打印机
+    if "HP" not in allPrinter[4]:
+        return False
     # PrintNum = int(input("选择打印机:\n"+"\n".join([f"{n} {p}" for n,p in enumerate(allPrinter)])))
     win32print.SetDefaultPrinter(allPrinter[4])
     # pdf_path="C:\\Users\Luke\Desktop\Doc1.docx"
@@ -18,7 +21,7 @@ def PrintFile(file_path):
                         '/d:"%s"' % win32print.GetDefaultPrinter (),
                           ".",
                           0)
-
+    return True
 
 slash = '\\'
 UPLOAD_FOLDER = 'upload'
@@ -48,10 +51,17 @@ def upload_file():
             file.save(os.path.join(app.config['UPLOAD_FOLDER'],file_name))
             base_path = os.getcwd()
             file_path = base_path + slash + app.config['UPLOAD_FOLDER'] + slash + file_name
-            PrintFile(file_path)
-            return redirect(url_for('upload_file',filename = file_name))
-    return render_template('index.html')
+            state=PrintFile(file_path)
+            if state:
+                msg="发送任务成功，等待打印\n"
+            else:
+                msg="未连接的HP打印机,请联系管理员\n"
+            # return redirect(url_for('upload_file',filename = file_name))
+            return render_template("index.html",msg=msg)
+    else:
+        msg=""
+    return render_template('index.html',msg=msg)
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0',port=7000)#IP Port
+    app.run(host='0.0.0.0',port=7001)#IP Port
